@@ -2,11 +2,6 @@ use std::fmt::Write;
 
 use godot::global::{PrintLevel, PrintRecord, PrintSource};
 use tracing::{Level, Metadata};
-use tracing_subscriber::{fmt::MakeWriter, layer::SubscriberExt, util::SubscriberInitExt};
-
-pub(super) fn initialize_tracing() {
-    tracing_subscriber::registry().with(GodotLayer {}).init();
-}
 
 fn to_godot_level(level: &tracing::Level) -> PrintLevel {
     if *level <= Level::ERROR {
@@ -59,7 +54,14 @@ impl tracing::field::Visit for GodotVisitor {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct GodotLayer {}
+
+impl GodotLayer {
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
 
 impl<S> tracing_subscriber::Layer<S> for GodotLayer
 where
