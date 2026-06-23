@@ -76,7 +76,7 @@ where
         let mut visitor = GodotVisitor::new();
         event.record(&mut visitor);
 
-        let message = if let Some(mod_path) = meta.module_path()
+        let mut message = if let Some(mod_path) = meta.module_path()
             && meta.target() == mod_path
         {
             visitor.message.unwrap_or_default()
@@ -88,14 +88,26 @@ where
             }
         };
 
+        let mut rationale = if visitor.fields.is_empty() {
+            None
+        } else {
+            Some(visitor.fields)
+        };
+
+        let level = to_godot_level(meta.level());
+
+        // swapping the message and rationale for errors & warnings looks better in the debugger output
+        if level == PrintLevel::Warn
+            || level == PrintLevel::Error
+            || level == PrintLevel::ScriptError
+        {
+            message = rationale.replace(message).unwrap_or_default();
+        }
+
         godot::global::print_custom(PrintRecord {
-            level: to_godot_level(meta.level()),
+            level,
             message: &message,
-            rationale: if visitor.fields.is_empty() {
-                None
-            } else {
-                Some(&visitor.fields)
-            },
+            rationale: rationale.as_deref(),
             source: to_godot_source(meta),
             editor_notify: false,
         });
